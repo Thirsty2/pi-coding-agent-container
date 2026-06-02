@@ -2,7 +2,17 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-RUN npm install -g zonzon
+# LOCAL PATCH (not upstream gni): pin zonzon so the schema-patch target below
+# stays stable, then lift the tcpIdleTimeoutMs zod cap from 600000 (10min) to
+# 7200000 (2h). The cap is an *idle* timeout; on the CPU-offloaded P70 a single
+# 24k-context prompt-eval can exceed an hour before the first token streams,
+# tripping zonzon's idle close (pi sees "Request timed out", no 504). 7200000
+# leaves headroom above the 4200000 (70min) value set in zonzon-config/hosts.json.
+# The grep makes the build fail loudly if a future zonzon version moves the line.
+RUN npm install -g zonzon@0.1.2 && \
+    SCHEMA=/usr/local/lib/node_modules/zonzon/node_modules/@opensecurity/zonzon-core/dist/schema.js && \
+    sed -i 's/\.min(1000)\.max(600000)\.default(30000)/.min(1000).max(7200000).default(30000)/' "$SCHEMA" && \
+    grep -q 'tcpIdleTimeoutMs: z.coerce.number().int().min(1000).max(7200000)' "$SCHEMA"
 
 RUN addgroup -S zonzon && adduser -S zonzon -G zonzon
 USER zonzon
