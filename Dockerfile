@@ -64,7 +64,12 @@ ENV NODE_OPTIONS="--require /usr/local/lib/app-firewall.js"
 
 FROM base AS release
 
-RUN npm install -g @earendil-works/pi-coding-agent
+# Pinned: an unpinned install let pi jump 0.78 -> 0.79.1 on a rebuild,
+# silently changing runtime behavior (0.79 added an interactive
+# "Trust project folder?" startup dialog + fd/ripgrep startup downloads,
+# both of which broke unattended gc sessions). Bump deliberately and
+# re-validate the city when you do.
+RUN npm install -g @earendil-works/pi-coding-agent@0.79.1
 
 RUN mkdir -p /home/node/.pi/agent \
     /workspace \
