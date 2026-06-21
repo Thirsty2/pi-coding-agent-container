@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -257,9 +258,21 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     if (addr && addr->sa_family == AF_INET) {
         struct sockaddr_in *sin = (struct sockaddr_in *)addr;
         
-        // Define our zonzon Intercept Mesh IP
-        struct in_addr proxy_addr;
-        inet_pton(AF_INET, "172.53.0.53", &proxy_addr);
+        // Define our zonzon Intercept Mesh IP. Per-instance deploys (gw-3su) run
+        // zonzon on a per-instance /24, so read the target from $ZONZON_IP and fall
+        // back to the canonical 172.53.0.53 when unset/invalid (default instance or
+        // older single-instance images) — default behavior stays byte-identical.
+        // Resolved once and cached: connect() is a hot path.
+        static struct in_addr proxy_addr;
+        static int proxy_addr_init = 0;
+        if (!proxy_addr_init) {
+            const char *zonzon_ip = getenv("ZONZON_IP");
+            if (!zonzon_ip || !*zonzon_ip ||
+                inet_pton(AF_INET, zonzon_ip, &proxy_addr) != 1) {
+                inet_pton(AF_INET, "172.53.0.53", &proxy_addr);
+            }
+            proxy_addr_init = 1;
+        }
         
         // Ignore loopback (127.0.0.1) and traffic already heading to zonzon
         if (sin->sin_addr.s_addr != proxy_addr.s_addr && 
