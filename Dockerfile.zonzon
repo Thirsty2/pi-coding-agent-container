@@ -4,7 +4,7 @@ WORKDIR /app
 
 # LOCAL PATCH (not upstream gni): pin zonzon so the schema-patch target below
 # stays stable, then lift the tcpIdleTimeoutMs zod cap from 600000 (10min) to
-# 7200000 (2h). The cap is an *idle* timeout; on the CPU-offloaded P70 a single
+# 7200000 (2h). The cap is an *idle* timeout; on a CPU-offloaded host a single
 # 24k-context prompt-eval can exceed an hour before the first token streams,
 # tripping zonzon's idle close (pi sees "Request timed out", no 504). 7200000
 # leaves headroom above the 4200000 (70min) value set in zonzon-config/hosts.json.
