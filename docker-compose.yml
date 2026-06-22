@@ -7,7 +7,10 @@ services:
     cap_add:
       - NET_ADMIN
     ports:
-      - "58080:80/tcp"
+      # 18080 (localhost-only), not 58080: the 58xxx range collides with Windows
+      # reserved port ranges (Hyper-V/HTTP.sys) on Docker Desktop/WSL2. Matches
+      # the superproject's ZONZON_DEBUG_PORT default.
+      - "127.0.0.1:18080:80/tcp"
     volumes:
       - ./config:/app/config:ro
     environment:

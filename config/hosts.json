@@ -6,7 +6,7 @@
   "tcpIdleTimeoutMs": 60000,
   "controlPlane": {
     "enabled": true,
-    "port": 58080
+    "port": 55080
   },
   "firewall": {
     "defaultPolicy": "deny",
